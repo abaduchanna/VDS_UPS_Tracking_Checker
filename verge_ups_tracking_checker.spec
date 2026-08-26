@@ -102,7 +102,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='UPS_tracking_checker',
+    name='verge_ups_tracking_checker',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
