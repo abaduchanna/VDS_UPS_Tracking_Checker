@@ -4,14 +4,14 @@ _year = _dt.date.today().year
 
 SPEC_DOC = f"""PyInstaller spec
 Developed by Abad Umair Channa \u00a9 {_year}
-Build command: pyinstaller UPS_tracking_checker.spec
+Build command: pyinstaller verge_ups_tracking_checker.spec
 """
 
 
 block_cipher = None
 
 a = Analysis(
-    ['UPS_tracking_checker.py'],
+    ['verge_ups_tracking_checker.py'],
     pathex=['.'],
     binaries=[],
     datas=[

@@ -1,6 +1,6 @@
 # verge-ups-tracking-checker
 
-Standalone Verge Desk Solutions Tkinter tool: `UPS_tracking_checker.pyw` — UPS package tracking
+Standalone Verge Desk Solutions Tkinter tool: `verge_ups_tracking_checker.pyw` — UPS package tracking
 verification via Selenium/Edge.
 
 Fixed: the "Progress & Results" log panel was cramped (window capped at
