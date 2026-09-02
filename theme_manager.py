@@ -18,8 +18,8 @@ class ThemeManager:
     """Manages light/dark themes with protected widget tags."""
 
 
-    BRAND_NAVY = "#2A3641"
-    BRAND_RED = "#6E8595"
+    BRAND_NAVY = "#0B0E13"
+    BRAND_RED = "#2C5FE3"
     BRAND_WHITE = "#ffffff"
 
     THEMES = {
@@ -37,17 +37,17 @@ class ThemeManager:
             "log_fg": "#e2e8f0",
         },
         "dark": {
-            "bg": "#2A3641",
-            "panel": "#344052",
-            "panel_alt": "#3D4A5E",
-            "text": "#E6E7E8",
-            "text_dim": "#8A9AAB",
-            "input": "#3D4A5E",
-            "border": "#4A5A70",
-            "navy": "#2A3641",
-            "red": "#6E8595",
-            "log_bg": "#1E2832",
-            "log_fg": "#C5D0DC",
+            "bg": "#0B0E13",
+            "panel": "#171A1F",
+            "panel_alt": "#2A2C31",
+            "text": "#F5F7FA",
+            "text_dim": "#8A93A0",
+            "input": "#1E2228",
+            "border": "#262B33",
+            "navy": "#0B0E13",
+            "red": "#2C5FE3",
+            "log_bg": "#10141B",
+            "log_fg": "#C9D1DC",
         }
     }
 
@@ -238,3 +238,57 @@ def apply_theme_to_window(window, theme_manager=None):
 
 def get_copyright_year():
     return ThemeManager.get_copyright_year()
+
+
+# ── Verge-style abstract band texture (brand-fixed, theme-independent) ──
+# Mirrors the VergeDesk splash reference: near-black brand band with huge,
+# subtle abstract circles - navy tints hugging the TOP-RIGHT of the header
+# band, a teal arc peeking from the BOTTOM-LEFT of the footer band.
+# Colors are sampled from the user-provided reference image.
+
+BAND_BG = "#0B0E13"
+
+_HEADER_CIRCLES = (
+    # (fill, center_x_rel, center_y_rel, radius_rel_to_height)
+    ("#0E1728", 0.94, 0.10, 1.55),   # large navy circle hugging the top-right corner
+    ("#101B30", 0.72, 1.15, 1.00),   # softer companion circle below-left of it
+)
+
+_FOOTER_CIRCLES = (
+    ("#0B1919", 0.05, 1.75, 1.90),   # teal tint peeking from the bottom-left
+    ("#0E1728", 0.38, 2.30, 1.55),   # faint navy companion arc
+)
+
+
+def draw_band_texture(canvas, zone="header"):
+    """Paint the Verge-style abstract circles onto a brand band canvas.
+
+    zone="header": big navy-tinted circles anchored to the top-right.
+    zone="footer": teal-tinted arc peeking from the bottom-left.
+
+    Geometry is computed from the canvas's CURRENT size, so this is safe to
+    call again on every <Configure> (resize) event. Items are tagged
+    "band_texture" and stacked below everything else on the canvas, so text
+    and widgets drawn after this stay visible on top.
+    """
+    try:
+        width = int(canvas.winfo_width())
+        height = int(canvas.winfo_height())
+    except Exception:
+        return
+    if width <= 2 or height <= 2:
+        return
+    canvas.delete("band_texture")
+    circles = _HEADER_CIRCLES if zone == "header" else _FOOTER_CIRCLES
+    for color, cx_rel, cy_rel, r_rel in circles:
+        radius = height * r_rel
+        cx = width * cx_rel
+        cy = height * cy_rel
+        canvas.create_oval(
+            cx - radius, cy - radius, cx + radius, cy + radius,
+            fill=color, outline="", width=0, tags=("band_texture",),
+        )
+    try:
+        canvas.tag_lower("band_texture")
+    except Exception:
+        pass

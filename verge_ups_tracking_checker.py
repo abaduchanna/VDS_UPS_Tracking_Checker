@@ -73,15 +73,15 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 # BRAND / WINDOW CONFIG  (kept in sync with Verge_Inventory_Aging_Processor.pyw)
 # ─────────────────────────────────────────────────────────────────────────────
-NAVY  = "#2A3641"
+NAVY  = "#0B0E13"
 EMBEDDED_LOGO_B64 = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "embedded_logo_b64.txt"), "r").read().strip() if not getattr(sys, "frozen", False) else open(os.path.join(getattr(sys, "_MEIPASS", "."), "assets", "embedded_logo_b64.txt"), "r").read().strip()
 EMBEDDED_ICON_B64 = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "embedded_icon_b64.txt"), "r").read().strip() if not getattr(sys, "frozen", False) else open(os.path.join(getattr(sys, "_MEIPASS", "."), "assets", "embedded_icon_b64.txt"), "r").read().strip()
 
-RED   = "#6E8595"
+RED   = "#2C5FE3"
 WHITE = "#ffffff"
-LIGHT = "#E6E7E8"
-LOG_BG   = "#10182e"
-LOG_FG   = "#a8d8ff"
+LIGHT = "#171A1F"
+LOG_BG   = "#10141B"
+LOG_FG   = "#C9D1DC"
 
 ICON_ICO_NAME = "verge_icon.ico"
 LOGO_PNG_NAME = "Verge_Logo.png"
@@ -538,14 +538,14 @@ class UPSGuiApp:
                     font=("Segoe UI", 11, "bold"), padding=(16, 9), borderwidth=0)
         s.map("Run.TButton",
               background=[("active", "#c01820"), ("disabled", "#aaa")])
-        s.configure("Browse.TButton", background=NAVY, foreground=WHITE,
+        s.configure("Browse.TButton", background="#1E2228", foreground=WHITE,
                     font=("Segoe UI", 10), padding=(10, 6), borderwidth=0)
-        s.map("Browse.TButton", background=[("active", "#1a2550")])
-        s.configure("Cancel.TButton", background="#1a2550", foreground=WHITE,
+        s.map("Browse.TButton", background=[("active", "#171A1F")])
+        s.configure("Cancel.TButton", background="#171A1F", foreground=WHITE,
                     font=("Segoe UI", 10), padding=(10, 6), borderwidth=0)
-        s.map("Cancel.TButton", background=[("active", "#2a3560")])
+        s.map("Cancel.TButton", background=[("active", "#2A2C31")])
         s.configure("Accent.Horizontal.TProgressbar",
-                    troughcolor="#dde6f0", background=RED, borderwidth=0)
+                    troughcolor="#1E2228", background=RED, borderwidth=0)
 
     # ── header (matches Aging Processor: NAVY 108px, logo left, title center) ──
 
@@ -613,7 +613,7 @@ class UPSGuiApp:
                 tag = getattr(widget, "_tag", None)
                 if tag not in _PROTECTED:
                     bg = colors.get("bg", "#E6E7E8")
-                    fg = colors.get("text", "#16213a")
+                    fg = colors.get("text", "#F5F7FA")
                     if isinstance(widget, tk.Frame):
                         widget.configure(bg=bg)
                     elif isinstance(widget, tk.Label):
@@ -656,11 +656,11 @@ class UPSGuiApp:
         left = tk.Frame(panels, bg=LIGHT)
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         tk.Label(left, text="Tracking Numbers",
-                 font=("Segoe UI", 10, "bold"), fg=NAVY, bg=LIGHT).pack(anchor="w", pady=(0, 6))
+                 font=("Segoe UI", 10, "bold"), fg="#F5F7FA", bg=LIGHT).pack(anchor="w", pady=(0, 6))
         self.input_text = scrolledtext.ScrolledText(
             left, height=10, font=("Consolas", 9), wrap=tk.WORD,
-            bg=WHITE, fg=NAVY, relief="flat",
-            highlightbackground="#b0c4de", highlightthickness=1)
+            bg="#1E2228", fg="#F5F7FA", relief="flat",
+            highlightbackground="#262B33", highlightthickness=1)
         self.input_text.pack(fill="both", expand=True)
         btn_row = tk.Frame(left, bg=LIGHT)
         btn_row.pack(fill="x", pady=(6, 0))
@@ -675,7 +675,7 @@ class UPSGuiApp:
         right = tk.Frame(panels, bg=LIGHT)
         right.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
         tk.Label(right, text="Progress & Results",
-                 font=("Segoe UI", 10, "bold"), fg=NAVY, bg=LIGHT).pack(anchor="w", pady=(0, 6))
+                 font=("Segoe UI", 10, "bold"), fg="#F5F7FA", bg=LIGHT).pack(anchor="w", pady=(0, 6))
         self.output_log = scrolledtext.ScrolledText(
             right, height=10, font=("Consolas", 9), wrap=tk.WORD,
             bg=LOG_BG, fg=LOG_FG, relief="flat")
@@ -705,10 +705,10 @@ class UPSGuiApp:
                                        style="Browse.TButton", command=self.open_csv_folder,
                                        state="disabled")
         self.open_csv_btn.pack(side="left", padx=(0, 8))
-        self.progress_label = tk.Label(act, text="Ready", bg=LIGHT, fg=NAVY,
+        self.progress_label = tk.Label(act, text="Ready", bg=LIGHT, fg="#F5F7FA",
                                        font=("Segoe UI", 9))
         self.progress_label.pack(side="left")
-        self.status_label = tk.Label(act, text="", bg=LIGHT, fg=NAVY,
+        self.status_label = tk.Label(act, text="", bg=LIGHT, fg="#F5F7FA",
                                      font=("Segoe UI", 9))
         self.status_label.pack(side="right")
 
@@ -716,7 +716,7 @@ class UPSGuiApp:
         bar = tk.Frame(self.root, bg=NAVY, height=26)
         bar.pack(fill="x", side="bottom"); bar.pack_propagate(False)
         bar._tag = "footer"
-        lbl = tk.Label(bar, text=COPYRIGHT_TEXT, bg=NAVY, fg="#c7cbe0",
+        lbl = tk.Label(bar, text=COPYRIGHT_TEXT, bg=NAVY, fg="#8A93A0",
                  font=("Segoe UI", 8))
         lbl.place(relx=0.5, rely=0.5, anchor="center")
         lbl._tag = "footer"
