@@ -30,6 +30,7 @@ import time
 import re
 import csv
 import tempfile
+from typing import Callable, Dict, List, Optional
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from header_manager import FixedHeaderManager
