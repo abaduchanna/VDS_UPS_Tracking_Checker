@@ -132,3 +132,76 @@ def test_app_scripts_still_import_clean():
             if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
     missing = sorted(used - defined)
     assert not missing, f"names used but never defined/imported: {missing}"
+
+
+def test_band_canvas_never_hijacks_lift_and_has_failsafe():
+    """Regression (user-visible): tk.Canvas hijacks .lift()/.lower() for
+    canvas-ITEM stacking (tag_raise/tag_lower) — NOT window stacking. The old
+    code called texture_canvas.lift(title_label), which raised TclError that
+    the except block swallowed; the already-placed full-area canvas then sat
+    on TOP of the header, hiding the Verge logo, divider, theme toggle AND
+    the title. The fix raises the edge widgets via tk.call('raise', ...) and
+    destroys the canvas if anything fails, so brand controls can never be
+    hidden again."""
+    src = _read("header_manager.py")
+    assert "texture_canvas.lift(" not in src, \
+        "Canvas.lift(widget) hijacks tag_raise — must never be called"
+    assert "footer_canvas.lift(" not in src, \
+        "Canvas.lift(widget) hijacks tag_raise — must never be called"
+    assert 'self.header_frame.tk.call("raise", _edge._w)' in src, \
+        "edge widgets (logo/divider/toggle frames) must be raised via the low-level window raise"
+    assert src.count("_canvas.destroy()") >= 2, \
+        "destroy failsafes missing for header/footer texture canvases"
+    # texture must repaint on the CANVAS's own Configure too — the frame's
+    # Configure fires before place() resizes the canvas (canvas still 1x1),
+    # so without this the texture silently never paints.
+    assert 'self.texture_canvas.bind("<Configure>", self._repaint_band)' in src, \
+        "texture canvas must repaint on its own <Configure> events"
+    assert 'self.footer_canvas.bind("<Configure>", self._repaint_footer)' in src, \
+        "footer canvas must repaint on its own <Configure> events"
+    assert "import tkinter as tk" in src, \
+        "add_copyright must lazily import tkinter (tk was undefined)"
+
+
+def test_live_header_stack_keeps_logo_and_toggle_topmost():
+    """Live display test (skipped on headless CI): at the logo and the theme
+    toggle, the TOPMOST widget must be the logo label / toggle button — never
+    the full-area texture canvas. At the title center the canvas IS expected
+    on top, because it repaints the centered title text there."""
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        import pytest
+        pytest.skip("no display available")
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        import pytest
+        pytest.skip("cannot open display")
+    root.geometry("900x600+0+0")
+    try:
+        from header_manager import FixedHeaderManager
+        from theme_manager import ThemeManager
+
+        hm = FixedHeaderManager(root, title="Stack Probe")
+        hm.add_theme_toggle(
+            ThemeManager(default="dark", app_name="stack-probe"), callback=None)
+        logo = os.path.join(ROOT, "Verge_Logo.png")
+        if os.path.exists(logo):
+            hm.set_logo(logo_path=logo, text="Verge")
+        root.update_idletasks()
+        root.update()
+
+        def topmost(w):
+            x = w.winfo_rootx() + w.winfo_width() // 2
+            y = w.winfo_rooty() + w.winfo_height() // 2
+            return root.winfo_containing(x, y)
+
+        assert topmost(hm.logo_label) == hm.logo_label, \
+            f"logo covered by {topmost(hm.logo_label)}"
+        assert topmost(hm.theme_toggle_btn) == hm.theme_toggle_btn, \
+            f"theme toggle covered by {topmost(hm.theme_toggle_btn)}"
+        assert hm.texture_canvas is not None, "texture canvas missing"
+        assert topmost(hm.title_label) is hm.texture_canvas, \
+            "texture canvas must sit above the title label (it repaints the title)"
+    finally:
+        root.destroy()

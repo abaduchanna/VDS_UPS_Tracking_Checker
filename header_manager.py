@@ -103,6 +103,16 @@ class FixedHeaderManager:
         # label and BELOW the packed edge widgets (logo, divider, toggle).
         # The canvas paints the abstract circles AND re-draws the centered
         # title, because its own surface covers the plain label below it.
+        #
+        # ⚠ tkinter gotcha that previously HID the logo + theme toggle:
+        #   tk.Canvas hijacks .lift()/.lower() for canvas-ITEM stacking
+        #   (tag_raise/tag_lower), NOT window stacking — raising the canvas
+        #   onto the title widget raised TclError, the old except block
+        #   swallowed it, and the already-placed full-area canvas stayed on
+        #   top, covering logo, divider, toggle and title. We therefore raise
+        #   the sibling EDGE widgets with the low-level window 'raise' command
+        #   and destroy the canvas if anything fails, so brand controls can
+        #   never be hidden again.
         try:
             from theme_manager import draw_band_texture  # module-level painter
             self._draw_band_texture = draw_band_texture
@@ -111,11 +121,25 @@ class FixedHeaderManager:
                 highlightthickness=0, borderwidth=0, bd=0,
             )
             self.texture_canvas.place(relx=0.0, rely=0.0, relwidth=1.0, relheight=1.0)
-            # Stack: title label (bottom) < texture canvas < packed widgets.
-            self.texture_canvas.lift(self.title_label)
+            # Stack (bottom→top): title label < texture canvas < packed widgets.
+            for _edge in (self.left_frame, self.divider_frame, self.right_frame):
+                self.header_frame.tk.call("raise", _edge._w)
             self.header_frame.bind("<Configure>", self._repaint_band)
+            # CRITICAL: the place manager resizes the canvas AFTER the frame's
+            # Configure event, so the frame event alone can fire while the
+            # canvas is still 1x1 (painter early-returns, nothing retries).
+            # Bind the canvas's own <Configure> so every real size change
+            # (initial map + window resizes) repaints the texture.
+            self.texture_canvas.bind("<Configure>", self._repaint_band)
             self.header_frame.after_idle(self._repaint_band)
         except Exception:
+            # Failsafe: never leave a full-area canvas covering the header.
+            _canvas = getattr(self, "texture_canvas", None)
+            if _canvas is not None:
+                try:
+                    _canvas.destroy()
+                except Exception:
+                    pass
             self.texture_canvas = None
 
     def _repaint_band(self, event=None):
@@ -192,6 +216,7 @@ class FixedHeaderManager:
 
     def add_copyright(self, theme_manager):
         """Build a pinned footer bar (dark navy, never theme-changes) with centered copyright text."""
+        import tkinter as tk  # lazy import (add_copyright may run before other tk users)
         copyright_text = theme_manager.get_copyright_text()
 
         # Footer bar pinned to bottom of the PARENT window — not inside the header frame
@@ -227,11 +252,23 @@ class FixedHeaderManager:
                 self.footer_frame, bg=self.BRAND_NAVY,
                 highlightthickness=0, borderwidth=0, bd=0,
             )
+            # Canvas is placed AFTER the packed label, so it already stacks on
+            # top of it. NOTE: never raise the canvas onto the label —
+            # tk.Canvas maps .lift() to canvas-ITEM stacking and raises
+            # TclError. The label stays below the canvas; its text is redrawn
+            # on the canvas by _repaint_footer().
             self.footer_canvas.place(relx=0.0, rely=0.0, relwidth=1.0, relheight=1.0)
-            self.footer_canvas.lift(self.copyright_label)
             self.footer_frame.bind("<Configure>", self._repaint_footer)
+            self.footer_canvas.bind("<Configure>", self._repaint_footer)
             self.footer_frame.after_idle(self._repaint_footer)
         except Exception:
+            # Failsafe: drop the overlay so the plain label stays visible.
+            _canvas = getattr(self, "footer_canvas", None)
+            if _canvas is not None:
+                try:
+                    _canvas.destroy()
+                except Exception:
+                    pass
             self.footer_canvas = None
 
     def _repaint_footer(self, event=None):
