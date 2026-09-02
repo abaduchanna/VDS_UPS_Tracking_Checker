@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         app:
-          - UPS_tracking_checker
+          - verge_ups_tracking_checker
 
     steps:
       - name: Checkout
@@ -93,7 +93,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: UPS Tracking Checker Build ${{ github.run_number }}
+          name: Verge UPS Tracking Checker Build ${{ github.run_number }}
           body: |
             Automated build #${{ github.run_number }}
             Commit: ${{ github.sha }}
