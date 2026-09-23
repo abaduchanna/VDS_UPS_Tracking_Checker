@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         app:
-          - verge_VDS_UPS_Tracking_Checker
+          - VDS_UPS_Tracking_Checker
 
     steps:
       - name: Checkout

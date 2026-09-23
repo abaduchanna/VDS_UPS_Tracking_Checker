@@ -96,7 +96,7 @@ def test_band_texture_wired_into_bands():
 
 
 def test_app_scripts_use_splash_colors():
-    apps = [p for p in glob.glob(os.path.join(ROOT, "verge_*.py"))]
+    apps = [p for p in glob.glob(os.path.join(ROOT, "VDS_*.py"))]
     assert len(apps) == 1, f"expected exactly one app script, found {apps}"
     src = open(apps[0], encoding="utf-8").read()
     assert 'NAVY  = "#0B0E13"' in src or re.search(r'NAVY\s*=\s*"#0B0E13"', src)
@@ -112,7 +112,7 @@ def test_app_scripts_use_splash_colors():
 def test_app_scripts_still_import_clean():
     """The typing-import class of bug: module-level NameError must not return."""
     import builtins
-    apps = glob.glob(os.path.join(ROOT, "verge_*.py"))
+    apps = glob.glob(os.path.join(ROOT, "VDS_*.py"))
     tree = ast.parse(open(apps[0], encoding="utf-8").read())
     defined = set(dir(builtins)) | {"__file__", "__name__", "__doc__"}
     for node in ast.walk(tree):

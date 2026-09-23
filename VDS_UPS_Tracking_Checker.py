@@ -154,7 +154,7 @@ def _set_window_icon(root):
     try:
         data = base64.b64decode(EMBEDDED_ICON_B64.strip())
         tmp_dir = os.environ.get("TEMP", tempfile.gettempdir())
-        ico_path = os.path.join(tmp_dir, "verge_app_icon.ico")
+        ico_path = os.path.join(tmp_dir, "VDS_app_icon.ico")
         with open(ico_path, "wb") as f:
             f.write(data)
         root.iconbitmap(default=ico_path)
@@ -501,7 +501,7 @@ class UPSGuiApp:
         root.configure(bg=LIGHT)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        self.theme_manager = ThemeManager("VDS UPS Tracking Checker", app_name="verge-ups-tracking-checker")
+        self.theme_manager = ThemeManager("VDS UPS Tracking Checker", app_name="VDS-UPS-Tracking-Checker")
         self._styles(); self._header(); self._body(); self._copyright_bar()
         apply_theme_to_window(self.root, self.theme_manager)
         self.process_queue()
