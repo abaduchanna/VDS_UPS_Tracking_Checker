@@ -4,20 +4,20 @@ _year = _dt.date.today().year
 
 SPEC_DOC = f"""PyInstaller spec
 Developed by www.3SVerse.com \u00a9 {_year}
-Build command: pyinstaller verge_ups_tracking_checker.spec
+Build command: pyinstaller verge_VDS_UPS_Tracking_Checker.spec
 """
 
 
 block_cipher = None
 
 a = Analysis(
-    ['verge_ups_tracking_checker.py'],
+    ['verge_VDS_UPS_Tracking_Checker.py'],
     pathex=['.'],
     binaries=[],
     datas=[
         ('assets', 'assets'),
-        ('Verge_Logo.png', '.'),
-        ('verge_icon.ico', '.'),
+        ('VDS_Logo.png', '.'),
+        ('VDS_icon.ico', '.'),
         ('logo_handler.py', '.'),
         ('header_manager.py', '.'),
         ('theme_manager.py', '.'),
@@ -102,7 +102,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='verge_ups_tracking_checker',
+    name='verge_VDS_UPS_Tracking_Checker',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -114,5 +114,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='verge_icon.ico',
+    icon='VDS_icon.ico',
 )

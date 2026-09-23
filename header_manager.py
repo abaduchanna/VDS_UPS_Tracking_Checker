@@ -98,7 +98,7 @@ class FixedHeaderManager:
         self.logo_label._tag   = "header"
         self.title_label._tag  = "header"
 
-        # ── Verge-style abstract texture ──
+        # ── VDS-style abstract texture ──
         # A canvas sits directly ABOVE the (full-area, flat near-black) title
         # label and BELOW the packed edge widgets (logo, divider, toggle).
         # The canvas paints the abstract circles AND re-draws the centered
@@ -143,7 +143,7 @@ class FixedHeaderManager:
             self.texture_canvas = None
 
     def _repaint_band(self, event=None):
-        """Repaint Verge texture + centered title on the header band canvas."""
+        """Repaint VDS texture + centered title on the header band canvas."""
         canvas = getattr(self, "texture_canvas", None)
         painter = getattr(self, "_draw_band_texture", None)
         if canvas is None or painter is None:
@@ -240,7 +240,7 @@ class FixedHeaderManager:
         self.copyright_label._tag = "footer"
         self._footer_text = copyright_text
 
-        # ── Verge-style texture on the footer: teal arc from bottom-left.
+        # ── VDS-style texture on the footer: teal arc from bottom-left.
         # The canvas covers the plain label, so the copyright text is
         # re-drawn on the canvas as well.
         try:
@@ -270,7 +270,7 @@ class FixedHeaderManager:
             self.footer_canvas = None
 
     def _repaint_footer(self, event=None):
-        """Repaint Verge texture + centered copyright on the footer canvas."""
+        """Repaint VDS texture + centered copyright on the footer canvas."""
         canvas = getattr(self, "footer_canvas", None)
         painter = getattr(self, "_draw_band_texture", None)
         if canvas is None or painter is None:

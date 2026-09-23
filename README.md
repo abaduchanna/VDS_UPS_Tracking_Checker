@@ -1,4 +1,4 @@
-# UPS Tracking Checker (Verge)
+# UPS Tracking Checker (VDS)
 
-Verge Desk Solutions edition: batch UPS tracking-number lookup via Edge
+VDS Desk Solutions edition: batch UPS tracking-number lookup via Edge
 automation with Excel in/out. Windows EXE via GitHub Actions on push.

@@ -1,5 +1,5 @@
 """
-Theme Manager - Standardized for Verge/VidaPay Ecosystem
+Theme Manager - Standardized for VDS/VidaPay Ecosystem
 Developed by www.3SVerse.com | Copyright © {year} | All rights reserved.
 """
 import os
@@ -53,7 +53,7 @@ class ThemeManager:
 
     _PROTECTED_TAGS = {"header", "header_label", "brand", "logo", "run", "sched", "stop", "footer"}
 
-    def __init__(self, default="dark", app_name="Verge"):
+    def __init__(self, default="dark", app_name="VDS"):
         self.app_name = app_name
         self.CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "verge-telecom", app_name)
         self.CONFIG_FILE = os.path.join(self.CONFIG_DIR, "theme.json")
@@ -240,8 +240,8 @@ def get_copyright_year():
     return ThemeManager.get_copyright_year()
 
 
-# ── Verge-style abstract band texture (brand-fixed, theme-independent) ──
-# Mirrors the VergeDesk splash reference: near-black brand band with huge,
+# ── VDS-style abstract band texture (brand-fixed, theme-independent) ──
+# Mirrors the VDSDesk splash reference: near-black brand band with huge,
 # subtle abstract circles - navy tints hugging the TOP-RIGHT of the header
 # band, a teal arc peeking from the BOTTOM-LEFT of the footer band.
 # Colors are sampled from the user-provided reference image.
@@ -261,7 +261,7 @@ _FOOTER_CIRCLES = (
 
 
 def draw_band_texture(canvas, zone="header"):
-    """Paint the Verge-style abstract circles onto a brand band canvas.
+    """Paint the VDS-style abstract circles onto a brand band canvas.
 
     zone="header": big navy-tinted circles anchored to the top-right.
     zone="footer": teal-tinted arc peeking from the bottom-left.

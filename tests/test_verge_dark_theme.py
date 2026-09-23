@@ -1,8 +1,8 @@
-"""VergeDesk-splash dark theme regression tests.
+"""VDSDesk-splash dark theme regression tests.
 
 The user's reference image pins the dark palette: near-black bg (#0B0E13),
 huge subtle navy circles top-right (#0E1728), teal arc bottom-left (#0B1919),
-dark card surfaces (#171A1F) and the vivid Verge blue accent (#2C5FE3).
+dark card surfaces (#171A1F) and the vivid VDS blue accent (#2C5FE3).
 These tests pin those exact values and the band-texture wiring so neither
 the palette nor the texture can silently regress.
 """
@@ -52,7 +52,7 @@ def test_brand_colors_updated_everywhere():
     for f in ("theme_manager.py", "header_manager.py"):
         src = _read(f)
         assert 'BRAND_NAVY = "#0B0E13"' in src, f"{f}: BRAND_NAVY not splash black"
-        assert 'BRAND_RED = "#2C5FE3"' in src, f"{f}: BRAND_RED not Verge blue"
+        assert 'BRAND_RED = "#2C5FE3"' in src, f"{f}: BRAND_RED not VDS blue"
 
 
 def test_no_legacy_colors_in_dark_block():
@@ -139,7 +139,7 @@ def test_band_canvas_never_hijacks_lift_and_has_failsafe():
     canvas-ITEM stacking (tag_raise/tag_lower) — NOT window stacking. The old
     code called texture_canvas.lift(title_label), which raised TclError that
     the except block swallowed; the already-placed full-area canvas then sat
-    on TOP of the header, hiding the Verge logo, divider, theme toggle AND
+    on TOP of the header, hiding the VDS logo, divider, theme toggle AND
     the title. The fix raises the edge widgets via tk.call('raise', ...) and
     destroys the canvas if anything fails, so brand controls can never be
     hidden again."""
@@ -185,9 +185,9 @@ def test_live_header_stack_keeps_logo_and_toggle_topmost():
         hm = FixedHeaderManager(root, title="Stack Probe")
         hm.add_theme_toggle(
             ThemeManager(default="dark", app_name="stack-probe"), callback=None)
-        logo = os.path.join(ROOT, "Verge_Logo.png")
+        logo = os.path.join(ROOT, "VDS_Logo.png")
         if os.path.exists(logo):
-            hm.set_logo(logo_path=logo, text="Verge")
+            hm.set_logo(logo_path=logo, text="VDS")
         root.update_idletasks()
         root.update()
 

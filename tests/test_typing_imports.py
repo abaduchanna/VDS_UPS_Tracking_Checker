@@ -1,6 +1,6 @@
 """Regression: every name used in annotations must be imported/defined.
 
-verge_ups_tracking_checker.py once used Optional/Callable/List/Dict in
+verge_VDS_UPS_Tracking_Checker.py once used Optional/Callable/List/Dict in
 function-signature annotations without importing them from typing. Signatures
 are evaluated at import time, so the frozen EXE died instantly with:
     NameError: name 'Optional' is not defined  (line 174, in <module>)
@@ -10,7 +10,7 @@ import ast
 import builtins
 import os
 
-APP = os.path.join(os.path.dirname(__file__), "..", "verge_ups_tracking_checker.py")
+APP = os.path.join(os.path.dirname(__file__), "..", "verge_VDS_UPS_Tracking_Checker.py")
 
 # Names provided by the interpreter at runtime, not present in dir(builtins)
 RUNTIME_PROVIDED = {"__file__", "__name__", "__doc__"}

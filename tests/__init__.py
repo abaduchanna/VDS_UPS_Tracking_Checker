@@ -1,1 +1,1 @@
-"""Test suite for Verge/VidaPay tools."""
+"""Test suite for VDS/VidaPay tools."""

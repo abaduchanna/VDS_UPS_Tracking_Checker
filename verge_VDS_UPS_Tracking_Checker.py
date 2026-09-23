@@ -16,7 +16,7 @@ Paste tracking numbers, checks each one via headless Edge, saves CSV.
   - Edge browser automation (headless)
   - Cancel operation at any time
 
-Ship this file together with verge_icon.ico and Verge_Logo.png
+Ship this file together with VDS_icon.ico and VDS_Logo.png
 in the same folder for the window/taskbar icon and header logo.
 
 Developed by www.3SVerse.com | Copyright © {date.today().year} | All rights reserved.
@@ -71,7 +71,7 @@ except ImportError:
         pass
 
 # ─────────────────────────────────────────────────────────────────────────────
-# BRAND / WINDOW CONFIG  (kept in sync with Verge_Inventory_Aging_Processor.pyw)
+# BRAND / WINDOW CONFIG  (kept in sync with VDS_Inventory_Aging_Processor.pyw)
 # ─────────────────────────────────────────────────────────────────────────────
 NAVY  = "#0B0E13"
 EMBEDDED_LOGO_B64 = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "embedded_logo_b64.txt"), "r").read().strip() if not getattr(sys, "frozen", False) else open(os.path.join(getattr(sys, "_MEIPASS", "."), "assets", "embedded_logo_b64.txt"), "r").read().strip()
@@ -83,8 +83,8 @@ LIGHT = "#171A1F"
 LOG_BG   = "#10141B"
 LOG_FG   = "#C9D1DC"
 
-ICON_ICO_NAME = "verge_icon.ico"
-LOGO_PNG_NAME = "Verge_Logo.png"
+ICON_ICO_NAME = "VDS_icon.ico"
+LOGO_PNG_NAME = "VDS_Logo.png"
 COPYRIGHT_TEXT = f"Developed by www.3SVerse.com | Copyright © {date.today().year} | All rights reserved."
 ICON_ICO_B64 = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icon_ico_b64.txt"), "r").read().strip() if not getattr(sys, "frozen", False) else open(os.path.join(getattr(sys, "_MEIPASS", "."), "assets", "icon_ico_b64.txt"), "r").read().strip()
 
@@ -127,7 +127,7 @@ def _set_window_icon(root):
     # 1. Try sys._MEIPASS (PyInstaller onefile extraction dir)
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
-        ico_path = os.path.join(meipass, "verge_icon.ico")
+        ico_path = os.path.join(meipass, "VDS_icon.ico")
         if os.path.exists(ico_path):
             try:
                 root.iconbitmap(default=ico_path)
@@ -141,7 +141,7 @@ def _set_window_icon(root):
         base_dir = os.path.dirname(sys.executable)
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-    ico_path = os.path.join(base_dir, "verge_icon.ico")
+    ico_path = os.path.join(base_dir, "VDS_icon.ico")
     if os.path.exists(ico_path):
         try:
             root.iconbitmap(default=ico_path)
@@ -474,7 +474,7 @@ class UPSTrackingBot:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# GUI  (styled to match Verge_Inventory_Aging_Processor.pyw)
+# GUI  (styled to match VDS_Inventory_Aging_Processor.pyw)
 # ═══════════════════════════════════════════════════════════════════════════
 class UPSGuiApp:
 
@@ -488,7 +488,7 @@ class UPSGuiApp:
         self.update_queue = queue.Queue()
         self._logo_img = None
 
-        root.title("Verge Desk Solutions - UPS Tracking Checker")
+        root.title("VDS Desk Solutions - UPS Tracking Checker")
         # Set the window icon BEFORE _apply_dynamic_geometry() — that method
         # calls update_idletasks() which realizes the window, and the icon
         # must be set before realization or the taskbar/titlebar icon is lost.
@@ -501,7 +501,7 @@ class UPSGuiApp:
         root.configure(bg=LIGHT)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        self.theme_manager = ThemeManager("Verge UPS Tracking Checker", app_name="verge-ups-tracking-checker")
+        self.theme_manager = ThemeManager("VDS UPS Tracking Checker", app_name="verge-ups-tracking-checker")
         self._styles(); self._header(); self._body(); self._copyright_bar()
         apply_theme_to_window(self.root, self.theme_manager)
         self.process_queue()
@@ -583,7 +583,7 @@ class UPSGuiApp:
         try:
             _lp = _resource_path(LOGO_PNG_NAME) if "_resource_path" in dir() else os.path.join(os.path.dirname(os.path.abspath(__file__)), LOGO_PNG_NAME)
             if os.path.exists(_lp):
-                self.header_mgr.set_logo(logo_path=_lp, text="Verge")
+                self.header_mgr.set_logo(logo_path=_lp, text="VDS")
         except Exception:
             pass
 
@@ -912,7 +912,7 @@ def _enable_dpi_awareness() -> None:
         # Set AppUserModelID BEFORE any window is created — must be UNIQUE
         # per app or Windows caches a generic/shared taskbar icon.
         try:
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("VergeDesk.UPSTrackingChecker")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("VDSDesk.UPSTrackingChecker")
         except Exception:
             pass
         try:

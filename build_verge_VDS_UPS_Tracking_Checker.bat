@@ -1,13 +1,13 @@
 @echo off
 setlocal enabledelayedexpansion
-title Build verge_ups_tracking_checker.spec
+title Build verge_VDS_UPS_Tracking_Checker.spec
 
 set "SRCDIR=%~dp0"
 set "OUTDIR=%USERPROFILE%\Downloads\GitHub"
 
 echo.
 echo  ============================================================
-echo   Building: verge_ups_tracking_checker.spec
+echo   Building: verge_VDS_UPS_Tracking_Checker.spec
 echo  ============================================================
 echo.
 
@@ -64,20 +64,20 @@ if exist "requirements.txt" (
 )
 
 REM ── Build ──
-echo  Building verge_ups_tracking_checker.spec...
-python -m PyInstaller "verge_ups_tracking_checker.spec" --noconfirm --clean --workpath "%WORKBASE%" 2>&1
+echo  Building verge_VDS_UPS_Tracking_Checker.spec...
+python -m PyInstaller "verge_VDS_UPS_Tracking_Checker.spec" --noconfirm --clean --workpath "%WORKBASE%" 2>&1
 
 if errorlevel 1 (
-    echo    FAILED: verge_ups_tracking_checker.spec
+    echo    FAILED: verge_VDS_UPS_Tracking_Checker.spec
     popd
     pause
     exit /b 1
 )
 
-echo    SUCCESS: verge_ups_tracking_checker.spec
+echo    SUCCESS: verge_VDS_UPS_Tracking_Checker.spec
 
 REM ── Copy .exe to output ──
-set "EXENAME=verge_ups_tracking_checker.exe"
+set "EXENAME=verge_VDS_UPS_Tracking_Checker.exe"
 if exist "dist\!EXENAME!" (
     if not exist "%OUTDIR%" mkdir "%OUTDIR%"
     copy /Y "dist\!EXENAME!" "%OUTDIR%\!EXENAME!" >nul
@@ -90,7 +90,7 @@ popd
 
 echo.
 echo  ============================================================
-echo   Done: verge_ups_tracking_checker.spec
+echo   Done: verge_VDS_UPS_Tracking_Checker.spec
 echo  ============================================================
 echo.
 pause
