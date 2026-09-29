@@ -48,6 +48,18 @@ jobs:
           fi
           ls -la dist/
 
+      - name: Smoke-test packaged EXE startup
+        shell: powershell
+        run: |
+          $exe = Join-Path $PWD "dist/${{ matrix.app }}.exe"
+          $process = Start-Process -FilePath $exe -WindowStyle Hidden -PassThru
+          Start-Sleep -Seconds 12
+          if ($process.HasExited) {
+            throw "Packaged EXE exited during startup with code $($process.ExitCode)"
+          }
+          Stop-Process -Id $process.Id -Force
+          Write-Host "Packaged EXE remained running: startup imports passed."
+
 
       # Code signing (sigstore)
       - name: Install sigstore
