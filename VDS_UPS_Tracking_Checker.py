@@ -503,7 +503,7 @@ class UPSGuiApp:
 
         self.theme_manager = ThemeManager("VDS UPS Tracking Checker", app_name="VDS-UPS-Tracking-Checker")
         self._styles(); self._header(); self._body(); self._copyright_bar()
-        apply_theme_to_window(self.root, self.theme_manager)
+        self._apply_theme()
         self.process_queue()
 
     def _apply_dynamic_geometry(self) -> None:
@@ -533,19 +533,26 @@ class UPSGuiApp:
 
     # ── styles ─────────────────────────────────────────────────────────────
     def _styles(self):
-        s = ttk.Style(); s.theme_use("clam")
-        s.configure("Run.TButton", background=RED, foreground=WHITE,
-                    font=("Segoe UI", 11, "bold"), padding=(16, 9), borderwidth=0)
-        s.map("Run.TButton",
-              background=[("active", "#c01820"), ("disabled", "#aaa")])
-        s.configure("Browse.TButton", background="#1E2228", foreground=WHITE,
-                    font=("Segoe UI", 10), padding=(10, 6), borderwidth=0)
-        s.map("Browse.TButton", background=[("active", "#171A1F")])
-        s.configure("Cancel.TButton", background="#171A1F", foreground=WHITE,
-                    font=("Segoe UI", 10), padding=(10, 6), borderwidth=0)
-        s.map("Cancel.TButton", background=[("active", "#2A2C31")])
+        s = ttk.Style()
+        if str(s.theme_use()) != "clam":
+            s.theme_use("clam")
+        c = self.theme_manager.get_colors()
+        hover = "#f0541c"
+        for name, padding in (("Run.TButton", (16, 9)),
+                              ("Browse.TButton", (10, 6)),
+                              ("Cancel.TButton", (10, 6))):
+            s.configure(name, background=c["panel_alt"], foreground=c["text"],
+                        font=("Segoe UI", 10, "bold"), padding=padding,
+                        bordercolor=hover, focusthickness=1, focuscolor=hover)
+            s.map(name,
+                  background=[("disabled", c["panel_alt"]),
+                              ("pressed", "#B8330F"), ("active", hover)],
+                  foreground=[("disabled", c["text_dim"]),
+                              ("pressed", "#ffffff"), ("active", "#ffffff")],
+                  bordercolor=[("disabled", c["border"]),
+                               ("pressed", hover), ("active", hover)])
         s.configure("Accent.Horizontal.TProgressbar",
-                    troughcolor="#1E2228", background=RED, borderwidth=0)
+                    troughcolor=c["panel_alt"], background=hover, borderwidth=0)
 
     # ── header (matches Aging Processor: NAVY 108px, logo left, title center) ──
 
@@ -597,6 +604,9 @@ class UPSGuiApp:
             except Exception:
                 return
         apply_theme_to_window(self.root, self.theme_manager)
+        # Generic theme application resets custom fonts/button maps. Reapply
+        # the app styles last so light/dark toggles never leave stale colors.
+        self._styles()
         try:
             self.root.configure(bg=colors.get("bg", "#E6E7E8"))
         except Exception:
