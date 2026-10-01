@@ -163,12 +163,13 @@ class FixedHeaderManager:
             # Tk Button/Label this has no rectangular background, so the icon
             # is genuinely transparent over the header artwork.
             canvas.delete("theme_toggle")
-            toggle_text = getattr(self, "_theme_toggle_text", None)
             toggle_action = getattr(self, "_theme_toggle_action", None)
-            if width > 2 and height > 2 and toggle_text and toggle_action:
-                canvas.create_text(
-                    width - 32, height / 2, text=toggle_text,
-                    font=("Segoe UI Emoji", 14), fill="#ffffff",
+            if width > 2 and height > 2 and toggle_action:
+                from theme_manager import draw_theme_glyph
+                tm = getattr(self, "theme_manager", None)
+                draw_theme_glyph(
+                    canvas, width - 32, height / 2,
+                    "dark" if (tm is None or tm.current_theme == "dark") else "light",
                     tags=("theme_toggle",),
                 )
                 canvas.tag_bind("theme_toggle", "<Button-1>",
@@ -218,14 +219,14 @@ class FixedHeaderManager:
             self.theme_toggle_btn = None
             self._theme_toggle_action = toggle_and_callback
             self._theme_toggle_text = (
-                "☀️" if theme_manager.current_theme == "dark" else "🌙"
+                "\u2600" if theme_manager.current_theme == "dark" else "\u263e"
             )
             self._repaint_band()
             return
         
         self.theme_toggle_btn = tk.Button(
             self.right_frame,
-            text="☀️" if theme_manager.current_theme == "dark" else "🌙",
+            text="\u2600" if theme_manager.current_theme == "dark" else "\u263e",
             command=toggle_and_callback,
             bg=self.BRAND_NAVY,
             fg="white",
@@ -234,7 +235,7 @@ class FixedHeaderManager:
             activeforeground="white",
             relief=tk.FLAT,
             width=3,
-            font=("Segoe UI Emoji", 13),
+            font=("Segoe UI Symbol", 13),
             cursor="hand2",
             highlightthickness=0,
             borderwidth=0
@@ -323,7 +324,7 @@ class FixedHeaderManager:
     def update_button_text(self):
         """Update toggle button text ONLY - never change header colors."""
         if self.theme_manager:
-            new_text = "🌙" if self.theme_manager.current_theme == "light" else "☀️"
+            new_text = "\u263e" if self.theme_manager.current_theme == "light" else "\u2600"
             self._theme_toggle_text = new_text
             if self.theme_toggle_btn:
                 self.theme_toggle_btn.configure(text=new_text)

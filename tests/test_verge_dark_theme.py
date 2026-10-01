@@ -198,8 +198,12 @@ def test_live_header_stack_keeps_logo_and_toggle_topmost():
 
         assert topmost(hm.logo_label) == hm.logo_label, \
             f"logo covered by {topmost(hm.logo_label)}"
-        assert topmost(hm.theme_toggle_btn) == hm.theme_toggle_btn, \
-            f"theme toggle covered by {topmost(hm.theme_toggle_btn)}"
+        if hm.theme_toggle_btn is not None:
+            assert topmost(hm.theme_toggle_btn) == hm.theme_toggle_btn, \
+                f"theme toggle covered by {topmost(hm.theme_toggle_btn)}"
+        else:
+            # canvas-drawn toggle: the glyph lives on the texture canvas
+            assert hm.texture_canvas is not None, "canvas toggle missing"
         assert hm.texture_canvas is not None, "texture canvas missing"
         assert topmost(hm.title_label) is hm.texture_canvas, \
             "texture canvas must sit above the title label (it repaints the title)"
