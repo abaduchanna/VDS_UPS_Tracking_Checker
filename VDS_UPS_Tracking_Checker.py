@@ -537,7 +537,7 @@ class UPSGuiApp:
         if str(s.theme_use()) != "clam":
             s.theme_use("clam")
         c = self.theme_manager.get_colors()
-        hover = "#f0541c"
+        hover = "#2C5FE3"
         for name, padding in (("Run.TButton", (16, 9)),
                               ("Browse.TButton", (10, 6)),
                               ("Cancel.TButton", (10, 6))):
@@ -546,7 +546,7 @@ class UPSGuiApp:
                         bordercolor=hover, focusthickness=1, focuscolor=hover)
             s.map(name,
                   background=[("disabled", c["panel_alt"]),
-                              ("pressed", "#B8330F"), ("active", hover)],
+                              ("pressed", "#2148B6"), ("active", hover)],
                   foreground=[("disabled", c["text_dim"]),
                               ("pressed", "#ffffff"), ("active", "#ffffff")],
                   bordercolor=[("disabled", c["border"]),
