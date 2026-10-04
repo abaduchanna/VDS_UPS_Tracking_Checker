@@ -142,6 +142,12 @@ class FixedHeaderManager:
                     pass
             self.texture_canvas = None
 
+        # Visible website/WiFi Transfer ring + orb animation in the header.
+        try:
+            from branding_runtime import install_header_animation
+            install_header_animation(self)
+        except Exception:
+            pass
     def _repaint_band(self, event=None):
         """Repaint VDS texture + centered title on the header band canvas."""
         canvas = getattr(self, "texture_canvas", None)
