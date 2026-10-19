@@ -1,0 +1,98 @@
+@echo off
+setlocal enabledelayedexpansion
+title Build VDS_UPS_Tracking_Detailed.spec
+
+set "SRCDIR=%~dp0"
+set "OUTDIR=%USERPROFILE%\Downloads\GitHub"
+
+echo.
+echo  ============================================================
+echo   Building: VDS_UPS_Tracking_Detailed.spec
+echo  ============================================================
+echo.
+
+REM ── Check prerequisites ──
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo    ERROR: Python not found in PATH.
+    pause
+    exit /b 1
+)
+REM -- Protect sources: compile every local module to native extensions -------
+REM  (no Python source and no decompilable bytecode ships inside the EXE)
+echo    Protecting sources (compiling to native extensions)...
+python -m pip install --quiet cython pyflakes 2>nul
+python _protect_build.py
+if errorlevel 1 (
+    echo    FAILED: source protection (_protect_build.py)
+    pause
+    exit /b 1
+)
+
+python -m PyInstaller --version >nul 2>&1
+if errorlevel 1 (
+    echo    PyInstaller not found. Installing...
+    python -m pip install --upgrade pyinstaller
+)
+git --version >nul 2>&1
+if errorlevel 1 (
+    echo    ERROR: Git not found in PATH.
+    pause
+    exit /b 1
+)
+echo    Prerequisites OK
+echo.
+
+REM ── Redirect PyInstaller workpath to system TEMP ──
+set "WORKBASE=%TEMP%\pyi_build\VDS_UPS_Tracking_Detailed"
+if exist "%WORKBASE%" rmdir /s /q "%WORKBASE%"
+mkdir "%WORKBASE%" 2>nul
+echo    Workpath: %WORKBASE%
+echo.
+
+REM ── Enter folder + clean ──
+pushd "%SRCDIR%"
+if exist "build" rmdir /s /q "build"
+if exist "dist"  rmdir /s /q "dist"
+if exist "__pycache__" rmdir /s /q "__pycache__"
+del /s /q *.pyc 2>nul
+
+REM ── Install deps ──
+if exist "requirements.txt" (
+    echo  Installing requirements...
+    python -m pip install -r requirements.txt --quiet 2>nul
+)
+
+REM ── Build ──
+echo  Building VDS_UPS_Tracking_Detailed.spec...
+python -m PyInstaller "VDS_UPS_Tracking_Detailed.spec" --noconfirm --clean --workpath "%WORKBASE%" 2>&1
+
+if errorlevel 1 (
+    echo    FAILED: VDS_UPS_Tracking_Detailed.spec
+    popd
+    pause
+    exit /b 1
+)
+
+echo    SUCCESS: VDS_UPS_Tracking_Detailed.spec
+
+REM ── Copy .exe to output ──
+set "EXENAME=VDS_UPS_Tracking_Detailed.exe"
+if exist "dist\!EXENAME!" (
+    if not exist "%OUTDIR%" mkdir "%OUTDIR%"
+    copy /Y "dist\!EXENAME!" "%OUTDIR%\!EXENAME!" >nul
+    echo    Collected: %OUTDIR%\!EXENAME!
+) else (
+    echo    WARNING: dist\!EXENAME! not found
+)
+
+popd
+
+echo.
+echo  ============================================================
+echo   Done: VDS_UPS_Tracking_Detailed.spec
+echo  ============================================================
+echo.
+pause
+endlocal
+exit /b 0

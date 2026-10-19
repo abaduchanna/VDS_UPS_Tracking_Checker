@@ -17,6 +17,7 @@ jobs:
       matrix:
         app:
           - VDS_UPS_Tracking_Checker
+          - VDS_UPS_Tracking_Detailed
 
     steps:
       - name: Checkout
