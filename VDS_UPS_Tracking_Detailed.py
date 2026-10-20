@@ -362,6 +362,24 @@ class UPSTrackingBot:
                 "current": current, "total": total,
                 "tracking": tracking, "result": result})
 
+    # Lookalike characters: letter O vs digit zero, I/l vs one, S vs five,
+    # B vs eight. Two copies of the SAME number that differ only in these
+    # characters (typing/OCR slips) look identical in the log panel but
+    # would be tracked twice — showing e.g. [2/4] and [3/4] with the same
+    # number. They are deduplicated to one check.
+    AMBIGUOUS_MAP = str.maketrans({"O": "0", "I": "1", "L": "1",
+                                  "S": "5", "B": "8"})
+
+    # Filled by extract_tracking_numbers: [(skipped_variant, kept_as), ...]
+    last_dedup_report: List[tuple] = []
+
+    @staticmethod
+    def canonical_tracking(tracking_number: str) -> str:
+        """Canonical form used ONLY for lookalike-duplicate detection.
+        The original string is always what gets tracked."""
+        return re.sub(r"[^A-Z0-9]", "", (tracking_number or "").upper()).translate(
+            UPSTrackingBot.AMBIGUOUS_MAP)
+
     @staticmethod
     def extract_tracking_numbers(text: str) -> List[str]:
         text = text.replace(",", "\n")
@@ -381,7 +399,20 @@ class UPSTrackingBot:
         for tn in tracking:
             if tn not in seen:
                 seen.add(tn); unique.append(tn)
-        return unique
+        # Lookalike-aware dedupe: one check per canonical group. The first
+        # seen variant is kept; later lookalikes are reported as skipped.
+        UPSTrackingBot.last_dedup_report = []
+        groups: Dict[str, List[int]] = {}
+        for i, tn in enumerate(unique):
+            groups.setdefault(UPSTrackingBot.canonical_tracking(tn), []).append(i)
+        if len(groups) == len(unique):
+            return unique
+        final: List[str] = []
+        for idxs in groups.values():
+            final.append(unique[idxs[0]])
+            for i in idxs[1:]:
+                UPSTrackingBot.last_dedup_report.append((unique[i], unique[idxs[0]]))
+        return final
 
     def wait_for_ups_result(self, tracking_number: str) -> str:
         self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
@@ -544,6 +575,8 @@ class UPSTrackingBot:
     def process_all(self, tracking_numbers: List[str], output_file: str):
         total = len(tracking_numbers)
         self.log(f"Total unique tracking numbers: {total}")
+        for skipped, kept in list(getattr(UPSTrackingBot, "last_dedup_report", []) or []):
+            self.log(f"⚠️ Near-duplicate skipped: {skipped} (looks the same as {kept})")
         if not tracking_numbers:
             self.log("No valid tracking numbers found."); return
         with open(output_file, "w", newline="", encoding="utf-8") as f:
