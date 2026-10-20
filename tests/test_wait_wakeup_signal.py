@@ -12,7 +12,7 @@ The fix makes the wait wake on the SAME case-insensitive engine
 - the wait can never disagree with the verdict,
 - Label Created pages wake in seconds, not 40s,
 - the status is still read afterwards from the page text (never guessed);
-  pages without a recognizable status stay "Not Found".
+  pages without a recognizable status stay "Status unclear — retry".
 """
 import importlib.util
 import os
@@ -59,7 +59,7 @@ def test_wait_wake_signal_matches_engine_for_in_transit(mod):
 
 
 def test_engine_never_guesses_on_unknown_page(mod):
-    """No recognizable status -> None -> caller records 'Not Found'
+    """No recognizable status -> None -> caller records 'Status unclear — retry'
     (never a guessed status — owner requirement: exact statuses only)."""
     assert mod.UPSTrackingBot.match_status("Some unrelated page content") is None
     assert mod.UPSTrackingBot.match_status("") is None

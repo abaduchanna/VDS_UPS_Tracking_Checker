@@ -414,22 +414,19 @@ class UPSTrackingBot:
                 UPSTrackingBot.last_dedup_report.append((unique[i], unique[idxs[0]]))
         return final
 
-    def wait_for_ups_result(self, tracking_number: str) -> str:
-        """Wait until the page shows a RECOGNIZABLE status.
+    def _wait_ups_window(self, seconds: float) -> str:
+        """Poll the live page for up to `seconds`; return the last body text.
 
-        The wake-up signal is the SAME case-insensitive engine
-        (match_status) that later classifies the result, so the wait can
-        never disagree with the verdict and never guesses on its own:
-        - "UPS received the shipping information" pages (Label Created)
-          now exit in a few seconds instead of burning the whole 40s
-          deadline — the old STATUS_WORDS check was case-sensitive and
-          missed the lowercase page text.
-        - The status itself is still read afterwards from the page by
-          get_current_status(); if nothing matches, the result is
-          "Not Found" — never a guessed status.
+        Wakes the moment get_current_status() — the SAME engine that later
+        labels the result — can classify the page (status heading element,
+        status line, or body text). The wait can therefore never disagree
+        with the verdict and never guesses on its own. UPS often renders the
+        tracking number in a chip/hidden element rather than plain text, so
+        the old `tracking_number in body_text` anchor is NOT required to
+        wake — it silently blocked Label Created pages and burned the full
+        40s deadline.
         """
-        self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        deadline = time.time() + 40
+        deadline = time.time() + seconds
         last_text = ""
         while time.time() < deadline:
             if self.is_cancelled:
@@ -437,15 +434,8 @@ class UPSTrackingBot:
             try:
                 body_text = self.driver.find_element(By.TAG_NAME, "body").text
                 last_text = body_text
-                # Wake when the tracking details are visible AND the engine
-                # recognizes a status in the page text.
-                if tracking_number in body_text and self.match_status(body_text):
+                if body_text and self.get_current_status(body_text):
                     return body_text
-                try:
-                    if self.driver.find_element(By.ID, "stApp_nameKey").text.strip():
-                        return body_text
-                except Exception:
-                    pass
                 try:
                     if self.driver.find_element(By.ID, "st_App_PkgStsMonthNum").text.strip():
                         return body_text
@@ -455,6 +445,31 @@ class UPSTrackingBot:
                 pass
             time.sleep(1)
         return last_text
+
+    def wait_for_ups_result(self, tracking_number: str) -> str:
+        """Wait until the page shows a RECOGNIZABLE status.
+
+        The wake-up signal is the SAME engine (get_current_status) that
+        later classifies the result, so the wait can never disagree with
+        the verdict and never guesses on its own:
+        - Label Created pages ("UPS received the shipping information...",
+          "A UPS shipping label has been created") wake in seconds instead
+          of burning the whole deadline.
+        - Nothing recognizable in 25s -> ONE reload, 15s more (owner rule:
+          retry before giving up).
+        - If it is STILL unrecognizable, the caller records
+          "Status unclear — retry" — never a guessed status.
+        """
+        self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        text = self._wait_ups_window(25)
+        if self.is_cancelled or (text and self.get_current_status(text)):
+            return text
+        try:
+            self.log("⚠️ Status unclear — reloading the page once...")
+            self.driver.refresh()
+        except Exception:
+            pass
+        return self._wait_ups_window(15)
 
     def is_delivered(self, body_text: str) -> bool:
         try:
@@ -558,19 +573,19 @@ class UPSTrackingBot:
             body_text = self.wait_for_ups_result(tracking_number)
             if self.is_cancelled:
                 return {"Tracking": tracking_number, "Date": "", "Status": "Cancelled"}
-            if not body_text:
-                return {"Tracking": tracking_number, "Date": self._today(),
-                        "Status": "Not Found"}
-            status = self.get_current_status(body_text)
+            # Exact status from the page only — the live heading element is
+            # checked even when the body text came back empty. No status ->
+            # owner wording: never guess, mark it for a retry instead.
+            status = self.get_current_status(body_text or "")
             if not status:
                 return {"Tracking": tracking_number, "Date": self._today(),
-                        "Status": "Not Found"}
+                        "Status": "Status unclear — retry"}
             date_str = self.get_status_date(status, body_text)
             return {"Tracking": tracking_number, "Date": date_str, "Status": status}
         except TimeoutException:
             self.log(f"⚠️ Timeout checking {tracking_number}")
             return {"Tracking": tracking_number, "Date": self._today(),
-                    "Status": "Not Found"}
+                    "Status": "Status unclear — retry"}
         except Exception as e:
             self.log(f"❌ ERROR checking {tracking_number}: {e}")
             return {"Tracking": tracking_number, "Date": "", "Status": f"ERROR: {e}"}
@@ -939,7 +954,7 @@ class UPSGuiApp:
             self.log_message("success", f"  {tracking}: {result}")
         elif "ERROR" in result or "Exception" in result:
             self.log_message("error", f"  {tracking}: {result}")
-        elif "Not Found" in result:
+        elif "Not Found" in result or "unclear" in result:
             self.log_message("warning", f"  {tracking}: {result}")
         else:
             self.log_message("log", f"  {tracking}: {result}")

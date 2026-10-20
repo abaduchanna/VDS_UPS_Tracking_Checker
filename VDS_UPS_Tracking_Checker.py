@@ -595,6 +595,30 @@ class UPSGuiApp:
             pass
 
 
+    # ── theme-aware log colors ──────────────────────────────────────
+    LOG_TAG_COLORS = {
+        "light": {"success": "#276749", "error": "#C53030",
+                  "info": "#2B6CB0", "warning": "#975A16"},
+        "dark": {"success": "#68D391", "error": "#FC8181",
+                 "info": "#90CDF4", "warning": "#F6E05E"},
+    }
+
+    def _apply_log_tag_colors(self, theme=None):
+        """Re-configure the log tag foregrounds for the ACTIVE theme.
+
+        The dark-palette tag colors (light green/blue/yellow) sit on the
+        dark log background — but the light theme's log panel is WHITE, so
+        those lines were nearly unreadable ('font nahi dikh rahe'). Dark,
+        saturated variants are used for the light theme instead."""
+        try:
+            theme = theme or self.theme_manager.current_theme
+            if theme not in self.LOG_TAG_COLORS:
+                theme = "dark"
+            for tag, clr in self.LOG_TAG_COLORS[theme].items():
+                self.output_log.tag_config(tag, foreground=clr)
+        except Exception:
+            pass
+
     def _apply_theme(self, colors=None):
         """Apply theme colors to all widgets EXCEPT header (header stays navy)."""
         import tkinter as tk
@@ -639,6 +663,8 @@ class UPSGuiApp:
             except Exception:
                 pass
         _walk(self.root)
+        # Log tag foregrounds must follow the active theme (readability)
+        self._apply_log_tag_colors()
 
 
     def _body(self):
@@ -685,9 +711,10 @@ class UPSGuiApp:
             right, height=10, font=("Consolas", 9), wrap=tk.WORD,
             bg=LOG_BG, fg=LOG_FG, relief="flat")
         self.output_log.pack(fill="both", expand=True)
-        for tag, clr in [("success", "#68D391"), ("error", "#FC8181"),
-                         ("info", "#90CDF4"), ("warning", "#F6E05E")]:
-            self.output_log.tag_config(tag, foreground=clr)
+        # Log tag colors are THEME-AWARE (dark palette greens/blues are
+        # nearly invisible on the light theme's white log panel —
+        # contrast 1.3–2.4x vs the 4.5 readability threshold).
+        self._apply_log_tag_colors()
 
         # ── Progress bar ───────────────────────────────────────────────────
         self.progress_var = tk.DoubleVar()
