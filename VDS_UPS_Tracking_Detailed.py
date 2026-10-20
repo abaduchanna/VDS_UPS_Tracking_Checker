@@ -88,7 +88,7 @@ LOG_FG   = "#C9D1DC"
 
 ICON_ICO_NAME = "VDS_icon.ico"
 LOGO_PNG_NAME = "VDS_Logo.png"
-COPYRIGHT_TEXT = f"Developed by www.3SVerse.com | Copyright © {date.today().year} | All rights reserved."
+COPYRIGHT_TEXT = f"Developed for Verge Desk Solutions | Copyright © {date.today().year} | All rights reserved."
 ICON_ICO_B64 = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icon_ico_b64.txt"), "r").read().strip() if not getattr(sys, "frozen", False) else open(os.path.join(getattr(sys, "_MEIPASS", "."), "assets", "icon_ico_b64.txt"), "r").read().strip()
 
 
@@ -415,27 +415,44 @@ class UPSTrackingBot:
         return final
 
     def wait_for_ups_result(self, tracking_number: str) -> str:
+        """Wait until the page shows a RECOGNIZABLE status.
+
+        The wake-up signal is the SAME case-insensitive engine
+        (match_status) that later classifies the result, so the wait can
+        never disagree with the verdict and never guesses on its own:
+        - "UPS received the shipping information" pages (Label Created)
+          now exit in a few seconds instead of burning the whole 40s
+          deadline — the old STATUS_WORDS check was case-sensitive and
+          missed the lowercase page text.
+        - The status itself is still read afterwards from the page by
+          get_current_status(); if nothing matches, the result is
+          "Not Found" — never a guessed status.
+        """
         self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         deadline = time.time() + 40
         last_text = ""
         while time.time() < deadline:
-            if self.is_cancelled: return ""
+            if self.is_cancelled:
+                return ""
             try:
                 body_text = self.driver.find_element(By.TAG_NAME, "body").text
                 last_text = body_text
-                if tracking_number in body_text and any(w in body_text for w in STATUS_WORDS):
+                # Wake when the tracking details are visible AND the engine
+                # recognizes a status in the page text.
+                if tracking_number in body_text and self.match_status(body_text):
                     return body_text
                 try:
                     if self.driver.find_element(By.ID, "stApp_nameKey").text.strip():
                         return body_text
-                except Exception: pass
+                except Exception:
+                    pass
                 try:
                     if self.driver.find_element(By.ID, "st_App_PkgStsMonthNum").text.strip():
                         return body_text
-                except Exception: pass
-                if any(w in body_text for w in STATUS_WORDS):
-                    return body_text
-            except Exception: pass
+                except Exception:
+                    pass
+            except Exception:
+                pass
             time.sleep(1)
         return last_text
 
