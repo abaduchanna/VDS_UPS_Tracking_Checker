@@ -97,16 +97,17 @@ def test_band_texture_wired_into_bands():
 
 def test_app_scripts_use_splash_colors():
     apps = [p for p in glob.glob(os.path.join(ROOT, "VDS_*.py"))]
-    assert len(apps) == 1, f"expected exactly one app script, found {apps}"
-    src = open(apps[0], encoding="utf-8").read()
-    assert 'NAVY  = "#0B0E13"' in src or re.search(r'NAVY\s*=\s*"#0B0E13"', src)
-    assert re.search(r'RED\s*=\s*"#2C5FE3"', src)
-    assert re.search(r'LIGHT\s*=\s*"#171A1F"', src)
-    assert '"#10141B"' in src and '"#C9D1DC"' in src
-    for legacy in ("#10182e", "#a8d8ff", "#1a2550", "#2a3560", "#dde6f0",
-                   "#e8eff8", "#b0c4de", "#4a6080", "#9d9db8", "#16213a"):
-        assert legacy not in src, f"legacy color {legacy} survived in app script"
-    assert "fg=NAVY" not in src, "fg=NAVY would be unreadable on dark surfaces"
+    assert apps, "no app scripts found"
+    for app in apps:
+        src = open(app, encoding="utf-8").read()
+        assert 'NAVY  = "#0B0E13"' in src or re.search(r'NAVY\s*=\s*"#0B0E13"', src), app
+        assert re.search(r'RED\s*=\s*"#2C5FE3"', src), app
+        assert re.search(r'LIGHT\s*=\s*"#171A1F"', src), app
+        assert '"#10141B"' in src and '"#C9D1DC"' in src, app
+        for legacy in ("#10182e", "#a8d8ff", "#1a2550", "#2a3560", "#dde6f0",
+                       "#e8eff8", "#b0c4de", "#4a6080", "#9d9db8", "#16213a"):
+            assert legacy not in src, f"legacy color {legacy} survived in {app}"
+        assert "fg=NAVY" not in src, f"fg=NAVY would be unreadable on dark surfaces in {app}"
 
 
 def test_app_scripts_still_import_clean():

@@ -36,11 +36,6 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog
 from header_manager import FixedHeaderManager
 from logo_handler import LogoHandler
 import base64
-
-# --- 3SVerse license gate (AI-copy protection retrofit t192) ---
-import license_core as _lic3sv
-if not _lic3sv.ensure_licensed():
-    raise SystemExit(0)
 if not sys.version_info >= (3, 10):
     print("Python 3.10+ required.")
     sys.exit(1)
