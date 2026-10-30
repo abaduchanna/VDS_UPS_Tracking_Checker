@@ -66,14 +66,6 @@ try:
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "pillow",
-                        "--quiet", "--disable-pip-version-check"],
-                       capture_output=True)
-        from PIL import Image as _PI, ImageTk as _PIT
-        HAS_PIL = True
-    except Exception:
-        pass
 
 # ─────────────────────────────────────────────────────────────────────────────
 # BRAND / WINDOW CONFIG  (kept in sync with VDS_Inventory_Aging_Processor.pyw)
@@ -478,6 +470,67 @@ class UPSTrackingBot:
             pass
 
 
+def _maximize_window(window):
+    try:
+        if window.winfo_exists():
+            window.state("zoomed")
+    except Exception:
+        try:
+            window.attributes("-zoomed", True)
+        except Exception:
+            pass
+
+
+def _show_startup_splash(root, app_factory, app_title):
+    """Show a short, branded VDS launch screen before building the main UI."""
+    width, height = 500, 220
+    root.overrideredirect(True)
+    root.configure(bg=NAVY)
+    root.resizable(False, False)
+    x = max(0, (root.winfo_screenwidth() - width) // 2)
+    y = max(0, (root.winfo_screenheight() - height) // 2)
+    root.geometry(f"{width}x{height}+{x}+{y}")
+
+    panel = tk.Frame(root, bg=NAVY, padx=28, pady=22)
+    panel.pack(fill="both", expand=True)
+    try:
+        logo = tk.PhotoImage(file=_resource_path(LOGO_PNG_NAME))
+        logo_label = tk.Label(panel, image=logo, bg=NAVY)
+        logo_label.image = logo
+        logo_label.pack(pady=(0, 12))
+    except Exception:
+        tk.Label(panel, text="VDS", fg="white", bg=NAVY,
+                 font=("Segoe UI", 24, "bold")).pack(pady=(0, 12))
+    tk.Label(panel, text=app_title, fg="white", bg=NAVY,
+             font=("Segoe UI", 14, "bold")).pack()
+    tk.Label(panel, text="Preparing your workspace…", fg="#C9D1DC", bg=NAVY,
+             font=("Segoe UI", 10)).pack(pady=(4, 12))
+    style = ttk.Style(root)
+    style.theme_use("clam")
+    style.configure("VDS.Splash.Horizontal.TProgressbar",
+                    troughcolor="#222831", background=RED, borderwidth=0)
+    progress = ttk.Progressbar(panel, mode="indeterminate", length=390,
+                               style="VDS.Splash.Horizontal.TProgressbar")
+    progress.pack(fill="x")
+    progress.start(12)
+
+    def launch_app():
+        try:
+            progress.stop()
+            panel.destroy()
+            root.overrideredirect(False)
+            app_factory(root)
+            root.after_idle(lambda: _maximize_window(root))
+        except Exception as exc:
+            root.overrideredirect(False)
+            try:
+                messagebox.showerror("VDS startup failed", str(exc), parent=root)
+            finally:
+                root.destroy()
+
+    root.after(240, launch_app)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # GUI  (styled to match VDS_Inventory_Aging_Processor.pyw)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -782,13 +835,19 @@ class UPSGuiApp:
         self.status_label.pack(side="right")
 
     def _copyright_bar(self):
+        # Keep the footer a singleton if the UI is rebuilt on the existing root.
+        for child in self.root.winfo_children():
+            if getattr(child, "_tag", None) == "footer":
+                child.destroy()
         bar = tk.Frame(self.root, bg=NAVY, height=26)
         bar.pack(fill="x", side="bottom"); bar.pack_propagate(False)
         bar._tag = "footer"
-        lbl = tk.Label(bar, text=COPYRIGHT_TEXT, bg=NAVY, fg="#8A93A0",
+        self.footer_frame = bar
+        lbl = tk.Label(bar, text=COPYRIGHT_TEXT, bg=NAVY, fg="#C9D1DC",
                  font=("Segoe UI", 8))
         lbl.place(relx=0.5, rely=0.5, anchor="center")
         lbl._tag = "footer"
+        self.footer_label = lbl
 
     # ── GUI logic methods ──────────────────────────────────────────────────
     def log_message(self, level: str, message: str):
@@ -998,7 +1057,6 @@ def _enable_dpi_awareness() -> None:
 
 
 def main():
-    import tkinter as tk
     _enable_dpi_awareness()
     root = tk.Tk()
     UPSGuiApp(root)
