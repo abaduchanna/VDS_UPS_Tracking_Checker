@@ -225,6 +225,11 @@ STATUS_WORDS = (
     "Shipment Ready", "The delivery date will be provided",
 )
 
+# ── Multi-track mode (ups.com/track textarea, up to 25 numbers per submit) ──
+MULTI_TRACK_URL = "https://www.ups.com/track?loc=en_US&requester=ST"
+MULTI_BATCH_SIZE = 25          # UPS textarea limit: "Enter up to 25 tracking numbers"
+MULTI_MAX_PAGES = 5            # click Next (stApp_pagination_nextBtn) at most 5 pages
+
 
 class UPSTrackingBot:
     """UPS tracking bot with callback support for GUI integration"""
@@ -395,6 +400,132 @@ class UPSTrackingBot:
             self.log(f"Date extraction error: {e}")
             return None
 
+    # ── Multi-track batch mode ────────────────────────────────────────────
+    # One submit = textarea #stApp_trackingNumber filled one-per-line (≤25),
+    # Track click, then scrape the result cards page by page (Next button,
+    # max 5 pages). Card ids are re-indexed 0..n on EVERY page.
+
+    def _multi_first_number(self, driver=None):
+        d = driver or self.driver
+        try:
+            return d.find_element(By.ID, "stApp_stApp_namecard_TV_trkNum0").text.strip()
+        except Exception:
+            return None
+
+    def _multi_next_btn(self):
+        """Return the clickable Next button, or None if disabled/absent."""
+        try:
+            nxt = self.driver.find_element(By.ID, "stApp_pagination_nextBtn")
+        except Exception:
+            return None
+        cls = (nxt.get_attribute("class") or "")
+        if "disabled" in cls or (nxt.get_attribute("aria-disabled") or "") == "true":
+            return None
+        return nxt
+
+    def _multi_scrape_page(self, page_no: int) -> List[Dict[str, str]]:
+        """Scrape every result card on the CURRENT page (indexes 0..n)."""
+        rows = []
+        try:
+            cards = self.driver.find_elements(By.CSS_SELECTOR, "ups-card")
+        except Exception:
+            cards = []
+        for idx in range(len(cards)):
+            number = ""
+            try:
+                el = self.driver.find_element(By.ID, f"stApp_stApp_namecard_TV_trkNum{idx}")
+                number = (el.text or "").strip()
+                if not number:
+                    href = el.get_attribute("href") or ""
+                    if "tracknum=" in href:
+                        number = href.split("tracknum=")[1].split("&")[0]
+            except Exception:
+                continue
+            status = date_s = loc = tm = ""
+            try:
+                status = self.driver.find_element(
+                    By.ID, f"stApp_stApp_namecard_TV_status{idx}").text.strip()
+            except Exception:
+                pass
+            for eid, slot in ((f"st_App_namecard_PkgStsMonthNum{idx}", "date"),
+                              (f"st_App_namecard_PkgStsLoc{idx}", "loc"),
+                              (f"st_App_namecard_PkgStsTime{idx}", "time")):
+                try:
+                    val = re.sub(r"\s+", " ",
+                                 self.driver.find_element(By.ID, eid).text).strip()
+                except Exception:
+                    val = ""
+                if slot == "date":   date_s = val
+                elif slot == "loc":  loc = val
+                else:                tm = val
+            if not status:
+                status = "NO STATUS"
+            # Result string stays compatible with the old CSV format
+            if status.lower().startswith("delivered"):
+                m = (re.search(r"([A-Za-z]+)\s+(\d{1,2})", date_s, re.IGNORECASE))
+                if m:
+                    month = MONTH_MAP.get(m.group(1).title().replace(".", ""))
+                    if month:
+                        result = f"Delivered {month}/{int(m.group(2))}/{datetime.now().year}"
+                    else:
+                        result = "Delivered"
+                else:
+                    result = "Delivered"
+            else:
+                result = status
+            rows.append({"Tracking": number, "Result": result, "Status": status,
+                         "Date": date_s, "Location": loc, "Time": tm,
+                         "Page": page_no})
+        return rows
+
+    def check_multi_batch(self, batch: List[str]) -> List[Dict[str, str]]:
+        """Submit up to 25 tracking numbers at once and scrape ALL result
+        pages (Next button, max MULTI_MAX_PAGES). Returns [] on any failure so
+        the caller can fall back to the proven one-by-one path."""
+        self.driver.get(MULTI_TRACK_URL)
+        box = WebDriverWait(self.driver, 30).until(
+            EC.element_to_be_clickable((By.ID, "stApp_trackingNumber")))
+        box.clear()
+        box.send_keys("\n".join(batch))            # one per line
+        self.log(f"Submitted {len(batch)} tracking numbers (multi-track)...")
+        try:
+            self.driver.find_element(By.ID, "stApp_btnTrack").click()
+        except Exception:
+            self.driver.find_element(
+                By.XPATH, "//button[.//span[normalize-space()='Track']]").click()
+        try:
+            WebDriverWait(self.driver, 45).until(EC.presence_of_element_located(
+                (By.ID, "stApp_trackapackage_title")))
+        except TimeoutException:
+            self.log("Multi-track results page did not load (timeout).")
+            return []
+        time.sleep(1.5)
+        rows, page = [], 1
+        while page <= MULTI_MAX_PAGES:
+            if self.is_cancelled:
+                break
+            rows.extend(self._multi_scrape_page(page))
+            nxt = self._multi_next_btn()
+            if nxt is None:
+                break
+            before = self._multi_first_number()
+            try:
+                nxt.click()
+            except Exception:
+                break
+            try:
+                # duplicate-safe: only accept the page once the FIRST card
+                # actually shows a different tracking number
+                WebDriverWait(self.driver, 20).until(
+                    lambda d: self._multi_first_number(d) not in (None, before))
+            except TimeoutException:
+                self.log("Next page did not change results — stopping pagination.")
+                break
+            page += 1
+            time.sleep(1.0)
+        self.log(f"Multi-track batch complete: {len(rows)} results collected.")
+        return rows
+
     def check_tracking(self, tracking_number: str) -> Dict[str, str]:
         try:
             url = (f"https://www.ups.com/track?track=yes&trackNums={tracking_number}"
@@ -427,7 +558,9 @@ class UPSTrackingBot:
         with open(output_file, "a", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             for row in new_rows:
-                writer.writerow([row.get("Tracking", ""), row.get("Result", "")])
+                writer.writerow([row.get("Tracking", ""), row.get("Result", ""),
+                                 row.get("Date", ""), row.get("Location", ""),
+                                 row.get("Time", ""), row.get("Page", "")])
         self.saved_count = total_results
         self.log(f"Saved {len(new_rows)} results. Total saved: {self.saved_count}")
 
@@ -437,18 +570,41 @@ class UPSTrackingBot:
         if not tracking_numbers:
             self.log("No valid tracking numbers found."); return
         with open(output_file, "w", newline="", encoding="utf-8") as f:
-            csv.writer(f).writerow(["Tracking", "Result"])
+            csv.writer(f).writerow(["Tracking", "Result", "Date", "Location", "Time", "Page"])
         self.log(f"Output file: {output_file}")
-        self.log(f"\nChecking one by one. Saving after every 10 results.\n")
-        for i, tn in enumerate(tracking_numbers, 1):
+        batches = [tracking_numbers[i:i + MULTI_BATCH_SIZE]
+                   for i in range(0, total, MULTI_BATCH_SIZE)]
+        done = 0
+        use_multi = total > 1            # single number → proven one-by-one path
+        if use_multi:
+            self.log(f"Multi-track mode: {len(batches)} batch(es) of up to "
+                     f"{MULTI_BATCH_SIZE} numbers, max {MULTI_MAX_PAGES} result-pages each.\n")
+        for bi, batch in enumerate(batches, 1):
             if self.is_cancelled:
                 self.log("\nOperation cancelled by user."); break
-            self.log(f"[{i}/{total}] {tn}...")
-            row = self.check_tracking(tn)
-            self.results.append(row)
-            self.update_progress(i, total, tn, row["Result"])
-            self.save_results(output_file, force=False)
-            if i < total and not self.is_cancelled: time.sleep(2)
+            rows = []
+            if use_multi:
+                self.log(f"\nBatch {bi}/{len(batches)}: {len(batch)} tracking numbers...")
+                try:
+                    rows = self.check_multi_batch(batch)
+                except Exception as e:
+                    self.log(f"⚠️ Multi-track batch failed ({e}) — one-by-one fallback.")
+                    rows = []
+                if not rows and not self.is_cancelled:
+                    for tn in batch:
+                        if self.is_cancelled: break
+                        self.log(f"[fallback] {tn}...")
+                        rows.append(self.check_tracking(tn))
+            else:
+                tn = batch[0]
+                self.log(f"[1/1] {tn}...")
+                rows = [self.check_tracking(tn)]
+            for row in rows:
+                self.results.append(row)
+                done += 1
+                self.update_progress(done, total, row.get("Tracking", ""),
+                                     row.get("Result", ""))
+                self.save_results(output_file, force=False)
         self.save_results(output_file, force=True)
         delivered_count = sum(1 for r in self.results if r["Result"].startswith("Delivered"))
         self.log(f"\nFinal CSV saved to: {output_file}")
