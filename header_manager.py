@@ -47,8 +47,13 @@ class FixedHeaderManager:
         self.header_frame.pack_propagate(False)
 
         # LEFT: Logo
-        self.left_frame = tk.Frame(self.header_frame, bg=self.BRAND_NAVY)
-        self.left_frame.pack(side=tk.LEFT, padx=(18, 0), pady=9)
+        # Logo stays on the LEFT but is vertically CENTERED in the band: the
+        # frame spans the full header height and the label is placed at
+        # rely=0.5 (anchor "w"), so it never sits high/low whatever the
+        # logo image's own padding is (see set_logo: padding is cropped).
+        self.left_frame = tk.Frame(self.header_frame, bg=self.BRAND_NAVY, width=190)
+        self.left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(18, 0))
+        self.left_frame.pack_propagate(False)
 
         self.logo_label = tk.Label(
             self.left_frame,
@@ -59,7 +64,7 @@ class FixedHeaderManager:
             highlightthickness=0,
             borderwidth=0
         )
-        self.logo_label.pack()
+        self.logo_label.place(relx=0.0, rely=0.5, anchor="w")
         self.logo_label._tag = "header"
 
         # Red vertical divider
@@ -189,15 +194,31 @@ class FixedHeaderManager:
                 img = Image.open(logo_path)
                 if img.mode not in ("RGBA", "LA"):
                     img = img.convert("RGBA")
+                # crop transparent padding so the VISIBLE logo (not the PNG
+                # canvas) is what gets centered vertically in the header
+                try:
+                    _bbox = img.getchannel("A").point(lambda v: 255 if v > 20 else 0).getbbox()
+                    if _bbox:
+                        img = img.crop(_bbox)
+                except Exception:
+                    pass
                 img.thumbnail((190, 72), _get_resampling())
                 self.photo = ImageTk.PhotoImage(img)
                 self.logo_label.configure(image=self.photo, text="")
+                try:
+                    self.left_frame.configure(width=img.width)
+                except Exception:
+                    pass
                 return
             except:
                 pass
         
         # Fallback to text
         self.logo_label.configure(text=text)
+        try:
+            self.left_frame.configure(width=70)
+        except Exception:
+            pass
     
     def add_theme_toggle(self, theme_manager, callback=None):
         import tkinter as tk  # lazy import
