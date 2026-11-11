@@ -18,6 +18,8 @@ jobs:
         app:
           - VDS_UPS_Tracking_Checker
           - VDS_UPS_Tracking_Detailed
+          - VDS_UPS_Tracking_Checker_Qt
+          - VDS_UPS_Tracking_Detailed_Qt
 
     steps:
       - name: Checkout
