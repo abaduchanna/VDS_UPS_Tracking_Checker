@@ -22,7 +22,7 @@ class ThemeManagerQt:
     """Manages light/dark themes for a PySide6 app via QSS."""
 
     BRAND_NAVY = "#090d26"
-    BRAND_RED = "#e83030"
+    BRAND_RED = "#2C5FE3"
     BRAND_WHITE = "#ffffff"
 
     THEMES = {
