@@ -21,36 +21,36 @@ _THEME_MANAGER_QT_VERSION = "1.0.0"
 class ThemeManagerQt:
     """Manages light/dark themes for a PySide6 app via QSS."""
 
-    BRAND_NAVY = "#090d26"
+    BRAND_NAVY = "#0B0E13"
     BRAND_RED = "#2C5FE3"
     BRAND_WHITE = "#ffffff"
 
     THEMES = {
         "light": {
-            "bg": "#f6f7fb",
+            "bg": "#E6E7E8",
             "panel": "#ffffff",
-            "panel_alt": "#eef0f6",
-            "text": "#16213a",
-            "text_dim": "#5b6478",
+            "panel_alt": "#D6D9DC",
+            "text": "#2A3641",
+            "text_dim": "#6E8595",
             "input": "#ffffff",
-            "border": "#d5d9e5",
-            "navy": "#090d26",
-            "red": "#e83030",
+            "border": "#C5C8CC",
+            "navy": "#2A3641",
+            "red": "#6E8595",
             "log_bg": "#ffffff",
-            "log_fg": "#16213a",
+            "log_fg": "#1E252C",
         },
         "dark": {
-            "bg": "#0b1020",
-            "panel": "#141b38",
-            "panel_alt": "#1c2447",
-            "text": "#e8ecf7",
-            "text_dim": "#9aa4c0",
-            "input": "#1c2447",
-            "border": "#2b3561",
-            "navy": "#090d26",
-            "red": "#e83030",
-            "log_bg": "#05070f",
-            "log_fg": "#cbd5e1",
+            "bg": "#0B0E13",
+            "panel": "#171A1F",
+            "panel_alt": "#2A2C31",
+            "text": "#F5F7FA",
+            "text_dim": "#8A93A0",
+            "input": "#1E2228",
+            "border": "#262B33",
+            "navy": "#0B0E13",
+            "red": "#2C5FE3",
+            "log_bg": "#10141B",
+            "log_fg": "#C9D1DC",
         },
     }
 
