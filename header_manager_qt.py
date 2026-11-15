@@ -31,6 +31,40 @@ BRAND_NAVY = "#0B0E13"
 BRAND_RED = "#2C5FE3"
 BRAND_WHITE = "#ffffff"
 
+# VDS-style abstract band texture (brand-fixed, theme-independent) - ported
+# from theme_manager.py's draw_band_texture()/_HEADER_CIRCLES: two large,
+# subtle navy-tinted circles hugging the header's top-right corner. Missing
+# from the Qt port entirely until now (plain navy QFrame, no texture).
+_HEADER_CIRCLES = (
+    # (fill, center_x_rel, center_y_rel, radius_rel_to_height)
+    ("#0E1728", 0.94, 0.10, 1.55),
+    ("#101B30", 0.72, 1.15, 1.00),
+)
+
+
+class _BandTextureFrame(QFrame):
+    """Navy header QFrame that also paints the VDS abstract-circle texture
+    behind its children, geometry recomputed from the frame's current size
+    on every paint (mirrors the Tk canvas's <Configure> repaint)."""
+
+    def paintEvent(self, event):
+        # Paint the stylesheet navy background FIRST, then the circles on
+        # top of it - child widgets (logo/title/toggle) are separate
+        # widgets layered above this frame by Qt's normal stacking, so
+        # they stay visible regardless of paint order here.
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w, h = self.width(), self.height()
+        for color, cx_rel, cy_rel, r_rel in _HEADER_CIRCLES:
+            radius = h * r_rel
+            cx = w * cx_rel
+            cy = h * cy_rel
+            painter.setBrush(QColor(color))
+            painter.setPen(Qt.NoPen)
+            painter.drawEllipse(QPointF(cx, cy), radius, radius)
+        painter.end()
+
 
 class ThemeToggleGlyph(QWidget):
     """Vector sun (dark theme active -> click for light) / crescent moon
@@ -150,7 +184,7 @@ class FixedHeaderManagerQt:
         self.copyright_label = None
         self.footer_frame = None
 
-        self.header_frame = QFrame()
+        self.header_frame = _BandTextureFrame()
         self.header_frame.setObjectName("gfhHeader")
         self.header_frame.setFixedHeight(height)
         self.header_frame.setStyleSheet(f"background: {self.BRAND_NAVY};")
