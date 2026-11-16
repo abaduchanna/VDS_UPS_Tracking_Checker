@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget, QLabel, QFrame, QHBoxLayout, QVBoxLayout, QSizePolicy
 )
 
-_HEADER_MANAGER_QT_VERSION = "1.1.0"
+_HEADER_MANAGER_QT_VERSION = "1.2.0"
 
 # Title headline size chosen in the VidaPay_Rebate_Filing UI-polish round.
 # The label auto-shrinks (never below TITLE_MIN_PT) when the text does not
@@ -25,7 +25,7 @@ _HEADER_MANAGER_QT_VERSION = "1.1.0"
 # Converter" in an 1100px window) clip-proof while short titles keep the
 # full 32pt headline look.
 TITLE_BASE_PT = 32
-TITLE_MIN_PT = 15
+TITLE_MIN_PT = 12
 
 BRAND_NAVY = "#0B0E13"
 BRAND_RED = "#2C5FE3"
@@ -66,6 +66,31 @@ class _BandTextureFrame(QFrame):
         painter.end()
 
 
+# VDS footer texture: teal arc peeking from the bottom-left + faint navy
+# companion - mirrors theme_manager.py's _FOOTER_CIRCLES / draw_band_texture
+# zone="footer" (Tk side). Ported together with the header texture.
+_FOOTER_CIRCLES = (
+    ("#0B1919", 0.05, 1.75, 1.90),
+    ("#0E1728", 0.38, 2.30, 1.55),
+)
+
+
+class _FooterArcFrame(QFrame):
+    """Navy footer QFrame that also paints the VDS teal-arc texture."""
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w, h = self.width(), self.height()
+        for color, cx_rel, cy_rel, r_rel in _FOOTER_CIRCLES:
+            radius = h * r_rel
+            painter.setBrush(QColor(color))
+            painter.setPen(Qt.NoPen)
+            painter.drawEllipse(QPointF(w * cx_rel, h * cy_rel), radius, radius)
+        painter.end()
+
+
 class ThemeToggleGlyph(QWidget):
     """Vector sun (dark theme active -> click for light) / crescent moon
     (light theme active -> click for dark), same glyph as
@@ -79,6 +104,8 @@ class ThemeToggleGlyph(QWidget):
         self.setFixedSize(size, size)
         self.setCursor(Qt.PointingHandCursor)
         self.setObjectName("gfhHeader")
+        # Transparent so the band texture shows behind the glyph.
+        self.setStyleSheet("background: transparent;")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and self.on_click:
@@ -138,6 +165,9 @@ class _TitleLabel(QLabel):
 
     def __init__(self, text):
         super().__init__(text)
+        # Keep the ORIGINAL title: _apply_fit may replace the visible text
+        # with an elided ("...") copy once the point-size floor is reached.
+        self._full = text
         # _pt starts at 0 so the first _apply_fit() ALWAYS writes the
         # stylesheet - if the very first width already fit 32pt, skipping the
         # write would leave the app-wide QSS `QWidget { font-size: 13px; }`
@@ -150,16 +180,23 @@ class _TitleLabel(QLabel):
         avail = max(self.width() - 8, 60)
         while pt > TITLE_MIN_PT:
             fm = QFontMetrics(QFont("Segoe UI", pt, QFont.Bold))
-            if fm.horizontalAdvance(self.text()) <= avail:
+            if fm.horizontalAdvance(self._full) <= avail:
                 break
             pt -= 1
+        # At the size floor: elide instead of clipping mid-word.
+        fm = QFontMetrics(QFont("Segoe UI", pt, QFont.Bold))
+        shown = self._full
+        if fm.horizontalAdvance(self._full) > avail:
+            shown = fm.elidedText(self._full, Qt.ElideRight, max(avail, 40))
         if pt != self._pt:
             self._pt = pt
             self.setStyleSheet(self._stylesheet(pt))
+        if self.text() != shown:
+            self.setText(shown)
 
     def _stylesheet(self, pt):
         return (
-            f"background: {BRAND_NAVY}; color: {BRAND_WHITE}; "
+            "background: transparent; color: #F5F7FA; "
             f"font-size: {pt}pt; font-weight: bold; font-family: 'Segoe UI';"
         )
 
@@ -201,14 +238,16 @@ class FixedHeaderManagerQt:
         # visibly sits off-center from the window's actual midpoint.
         self.left_frame = QFrame()
         self.left_frame.setObjectName("gfhHeader")
-        self.left_frame.setStyleSheet(f"background: {self.BRAND_NAVY};")
+        # Transparent: the _BandTextureFrame circles behind must show
+        # through (Tk paints the texture under the same widgets).
+        self.left_frame.setStyleSheet("background: transparent;")
         left_layout = QHBoxLayout(self.left_frame)
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(0)
 
         self.logo_label = QLabel()
         self.logo_label.setObjectName("gfhHeader")
-        self.logo_label.setStyleSheet(f"background: {self.BRAND_NAVY}; color: {self.BRAND_RED};")
+        self.logo_label.setStyleSheet("background: transparent; color: {self.BRAND_RED};".format(self=self))
         self.logo_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
         left_layout.addWidget(self.logo_label, 0, Qt.AlignVCenter)
 
@@ -242,7 +281,7 @@ class FixedHeaderManagerQt:
         # RIGHT: theme toggle placeholder (added via add_theme_toggle)
         self.right_frame = QFrame()
         self.right_frame.setObjectName("gfhHeader")
-        self.right_frame.setStyleSheet(f"background: {self.BRAND_NAVY};")
+        self.right_frame.setStyleSheet("background: transparent;")
         self.right_layout = QHBoxLayout(self.right_frame)
         self.right_layout.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(self.right_frame, 0, Qt.AlignVCenter)
@@ -299,7 +338,7 @@ class FixedHeaderManagerQt:
         the Tk version pinning to the window, not the header frame."""
         copyright_text = theme_manager.get_copyright_text()
 
-        self.footer_frame = QFrame()
+        self.footer_frame = _FooterArcFrame()
         self.footer_frame.setObjectName("gfhFooter")
         self.footer_frame.setFixedHeight(24)
         self.footer_frame.setStyleSheet(f"background: {self.BRAND_NAVY};")
@@ -309,7 +348,8 @@ class FixedHeaderManagerQt:
         self.copyright_label = QLabel(copyright_text)
         self.copyright_label.setObjectName("gfhFooter")
         self.copyright_label.setAlignment(Qt.AlignCenter)
-        self.copyright_label.setStyleSheet(f"background: {self.BRAND_NAVY}; color: #c7cbe0; font-size: 8pt;")
+        self.copyright_label.setStyleSheet(
+            f"background: transparent; color: #8a93a0; font-size: 8pt;")
         footer_layout.addWidget(self.copyright_label)
 
         parent_layout.addWidget(self.footer_frame)
