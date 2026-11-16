@@ -879,8 +879,11 @@ def _close_pyi_splash():
 def main():
     _enable_dpi_awareness()
     app = QApplication(sys.argv)
+    from boot_splash_qt import show_boot_splash
+    _boot = show_boot_splash("#2C5FE3")
     win = MainWindow()
     win.show()
+    _boot.finish(win)
     _close_pyi_splash()
     sys.exit(app.exec())
 

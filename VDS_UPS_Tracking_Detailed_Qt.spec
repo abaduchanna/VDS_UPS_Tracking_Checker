@@ -15,6 +15,7 @@ a = Analysis(
     pathex=['.'],
     binaries=[],
     datas=[
+        ('splash.png', '.'),
         ('assets', 'assets'),
         ('VDS_icon.ico', '.'),
         ('VDS_Logo.png', '.'),
@@ -23,6 +24,7 @@ a = Analysis(
         ('native_titlebar_qt.py', '.'),
     ],
     hiddenimports=[
+        'boot_splash_qt',
         'PySide6',
         'PySide6.QtCore',
         'PySide6.QtGui',
@@ -103,10 +105,6 @@ splash = Splash(
     'splash.png',
     binaries=a.binaries,
     datas=a.datas,
-    text_pos=(60, 316),
-    text_size=11,
-    text_color='#96a8cd',
-    text_default='Starting...',
     minify_script=True,
     always_on_top=True,
 )
