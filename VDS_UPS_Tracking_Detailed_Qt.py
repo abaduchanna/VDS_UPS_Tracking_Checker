@@ -517,6 +517,15 @@ LOG_COLORS = {
     "": "#a8d8ff",
 }
 
+# Same log levels, darker shades - readable on the light theme's white log.
+LOG_COLORS_LIGHT = {
+    "info": "#2B6CB0",
+    "success": "#2F855A",
+    "error": "#C53030",
+    "warning": "#B7791F",
+    "": "#16213a",
+}
+
 
 def _extract_embedded_icon(b64, filename):
     try:
@@ -665,9 +674,20 @@ class MainWindow(QMainWindow):
     def _apply_theme(self):
         self.theme_manager.apply_theme_to_app(QApplication.instance())
         self.header_mgr.update_for_theme()
+        # Log console follows the theme, like the Tk build (its theme walk
+        # recolors Text widgets); a fixed dark box ignored light mode.
+        colors = self.theme_manager.get_colors()
+        for _name in ("output_log",):
+            _log_widget = getattr(self, _name, None)
+            if _log_widget is not None:
+                _log_widget.setStyleSheet(
+                    f"background: {colors['log_bg']}; color: {colors['log_fg']}; "
+                    "font-family: Consolas;")
 
     def log_message(self, message: str, level: str = "info"):
-        color = LOG_COLORS.get(level, LOG_COLORS["info"])
+        palette = (LOG_COLORS_LIGHT if getattr(self.theme_manager, "current_theme", "dark") == "light"
+                   else LOG_COLORS)
+        color = palette.get(level, palette["info"])
         ts = datetime.now().strftime("%H:%M:%S")
         self.output_log.appendHtml(f'<span style="color:{color}">[{ts}] {message}</span>')
 
